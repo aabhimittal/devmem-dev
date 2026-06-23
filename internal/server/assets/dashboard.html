@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DevMem Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --surface-alt: #0d0d0d;
+      --border: #1e1e1e;
+      --border-strong: #333333;
+      --text-primary: #ffffff;
+      --text-secondary: #888888;
+      --text-muted: #555555;
+      --accent: #7c6cfc;
+      --success: #28c840;
+      --amber: #febc2e;
+      --danger: #ff5f57;
+      --radius: 8px;
+      --mono: "SF Mono", "Fira Code", "Menlo", "Monaco", "Consolas", monospace;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text-primary);
+      font-family: Inter, sans-serif;
+      line-height: 1.6;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    code, pre, .mono { font-family: var(--mono); }
+
+    header {
+      position: sticky; top: 0; z-index: 10;
+      background: rgba(10,10,10,0.85);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+    }
+    .bar {
+      max-width: 1080px; margin: 0 auto; padding: 16px 24px;
+      display: flex; align-items: center; gap: 16px;
+    }
+    .logo { font-family: "Instrument Serif", serif; font-size: 26px; letter-spacing: 0.5px; }
+    .logo b { color: var(--accent); font-weight: 400; }
+    .project { color: var(--text-secondary); font-size: 14px; }
+    .project .name { color: var(--text-primary); }
+    .live {
+      margin-left: auto; display: flex; align-items: center; gap: 8px;
+      font-size: 12px; color: var(--text-secondary);
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); transition: background .3s; }
+    .dot.on { background: var(--success); box-shadow: 0 0 8px var(--success); }
+
+    nav.tabs {
+      max-width: 1080px; margin: 0 auto; padding: 0 24px;
+      display: flex; gap: 4px;
+    }
+    nav.tabs button {
+      background: none; border: none; color: var(--text-secondary);
+      font-family: Inter, sans-serif; font-size: 14px; cursor: pointer;
+      padding: 12px 16px; border-bottom: 2px solid transparent;
+    }
+    nav.tabs button:hover { color: var(--text-primary); }
+    nav.tabs button.active { color: var(--text-primary); border-bottom-color: var(--accent); }
+
+    main { max-width: 1080px; margin: 0 auto; padding: 32px 24px 80px; }
+    .panel { display: none; }
+    .panel.active { display: block; animation: fade .25s ease; }
+    @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+    h2.section { font-family: "Instrument Serif", serif; font-weight: 400; font-size: 28px; margin: 0 0 4px; }
+    p.lead { color: var(--text-secondary); margin: 0 0 24px; }
+
+    .grid { display: grid; gap: 16px; }
+    .stats { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px;
+    }
+    .card .k { color: var(--text-secondary); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .card .v { font-size: 22px; margin-top: 6px; }
+    .card .v.small { font-size: 14px; }
+
+    .modules { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+    .mod-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+    .mod-name { font-size: 18px; font-weight: 600; }
+    .mod-path { font-size: 12px; color: var(--text-muted); }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+    .chip {
+      font-size: 11px; padding: 3px 8px; border-radius: 999px;
+      background: rgba(124,108,252,0.12); color: var(--accent);
+      border: 1px solid rgba(124,108,252,0.3);
+    }
+    .chip.muted { background: var(--surface-alt); color: var(--text-secondary); border-color: var(--border); }
+    .md { font-size: 14px; color: var(--text-secondary); margin-top: 14px; }
+    .md h1, .md h2, .md h3 { color: var(--text-primary); font-family: Inter, sans-serif; }
+    .md h2 { font-size: 15px; margin: 16px 0 6px; }
+    .md h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); }
+    .md ul { padding-left: 18px; margin: 6px 0; }
+    .md code { background: var(--surface-alt); padding: 1px 5px; border-radius: 4px; font-size: 12px; color: var(--text-primary); }
+    .md pre { background: var(--surface-alt); padding: 12px; border-radius: 6px; overflow-x: auto; }
+    details > summary { cursor: pointer; color: var(--accent); font-size: 13px; margin-top: 10px; list-style: none; }
+    details > summary::-webkit-details-marker { display: none; }
+    details > summary::before { content: "▸ "; }
+    details[open] > summary::before { content: "▾ "; }
+
+    #diagram { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; overflow-x: auto; text-align: center; }
+    #diagram pre.fallback { text-align: left; color: var(--text-secondary); }
+
+    .timeline { position: relative; padding-left: 28px; }
+    .timeline::before { content: ""; position: absolute; left: 7px; top: 4px; bottom: 4px; width: 2px; background: var(--border); }
+    .entry { position: relative; margin-bottom: 22px; }
+    .entry::before {
+      content: ""; position: absolute; left: -28px; top: 6px;
+      width: 14px; height: 14px; border-radius: 50%;
+      background: var(--bg); border: 2px solid var(--accent);
+    }
+    .entry.breaking::before { border-color: var(--danger); }
+    .entry-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .type-badge { font-size: 11px; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; background: var(--surface); border: 1px solid var(--border-strong); color: var(--text-secondary); }
+    .type-badge.feature { color: var(--success); border-color: rgba(40,200,64,0.4); }
+    .type-badge.fix { color: var(--amber); border-color: rgba(254,188,46,0.4); }
+    .type-badge.breaking, .type-badge.structural { color: var(--danger); border-color: rgba(255,95,87,0.4); }
+    .entry-id { font-family: var(--mono); font-size: 12px; color: var(--text-muted); }
+    .entry-date { font-size: 12px; color: var(--text-secondary); margin-left: auto; }
+    .breaking-tag { font-size: 11px; color: var(--danger); border: 1px solid rgba(255,95,87,0.4); border-radius: 4px; padding: 2px 6px; }
+
+    .empty { text-align: center; padding: 64px 24px; color: var(--text-secondary); }
+    .empty .big { font-size: 18px; color: var(--text-primary); margin-bottom: 8px; }
+    .empty code { background: var(--surface); padding: 3px 8px; border-radius: 4px; color: var(--accent); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="bar">
+      <span class="logo">Dev<b>Mem</b></span>
+      <span class="project">/ <span class="name" id="project-name">…</span></span>
+      <span class="live"><span class="dot" id="live-dot"></span><span id="live-text">connecting…</span></span>
+    </div>
+    <nav class="tabs">
+      <button data-tab="overview" class="active">Overview</button>
+      <button data-tab="modules">Modules</button>
+      <button data-tab="architecture">Architecture</button>
+      <button data-tab="changelog">Changelog</button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="panel active" id="overview"></section>
+    <section class="panel" id="modules"></section>
+    <section class="panel" id="architecture"></section>
+    <section class="panel" id="changelog"></section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+    window.__mermaid = mermaid;
+    mermaid.initialize({ startOnLoad: false, theme: "dark", themeVariables: { primaryColor: "#1a1a2e", primaryBorderColor: "#7c6cfc", lineColor: "#7c6cfc", fontFamily: "Inter, sans-serif" } });
+  </script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    const md = (s) => (window.marked ? window.marked.parse(s || "") : "<pre>" + esc(s) + "</pre>");
+
+    async function getJSON(path) {
+      const r = await fetch(path);
+      if (!r.ok) throw new Error(path + " -> " + r.status);
+      return r.json();
+    }
+
+    const emptyState = (msg) =>
+      `<div class="empty"><div class="big">${esc(msg)}</div><div>Run <code>devmem init</code> in your repository, then refresh.</div></div>`;
+
+    async function loadOverview() {
+      try {
+        const o = await getJSON("/api/overview");
+        $("project-name").textContent = o.project_name || "repository";
+        if (!o.initialised && !o.module_count) {
+          $("overview").innerHTML = emptyState("No DevMem documentation found yet.");
+          return;
+        }
+        const stat = (k, v) => `<div class="card"><div class="k">${esc(k)}</div><div class="v small">${v}</div></div>`;
+        const tech = (o.tech_stack || []).map((t) => `<span class="chip">${esc(t)}</span>`).join(" ") || '<span class="chip muted">n/a</span>';
+        $("overview").innerHTML = `
+          <h2 class="section">${esc(o.project_name)}</h2>
+          <p class="lead">Live architecture memory generated by DevMem.</p>
+          <div class="grid stats">
+            ${stat("Modules", o.module_count || 0)}
+            ${stat("Last commit", o.last_commit ? '<span class="mono">' + esc(String(o.last_commit).slice(0, 10)) + "</span>" : "—")}
+            ${stat("Last capture", o.last_capture ? esc(o.last_capture.replace("T", " ").replace("Z", " UTC")) : "—")}
+            ${stat("Initialised", o.initialised_at ? esc(o.initialised_at.split("T")[0]) : "—")}
+          </div>
+          ${o.overview ? `<div class="card" style="margin-top:16px"><div class="k">Overview</div><div class="md">${md(o.overview)}</div></div>` : ""}
+          ${o.data_flow ? `<div class="card" style="margin-top:16px"><div class="k">Data flow</div><div class="md">${md(o.data_flow)}</div></div>` : ""}
+          <div class="card" style="margin-top:16px"><div class="k">Tech stack</div><div class="chips">${tech}</div></div>
+        `;
+      } catch (e) {
+        $("overview").innerHTML = emptyState("Could not load overview.");
+      }
+    }
+
+    async function loadModules() {
+      try {
+        const mods = await getJSON("/api/modules");
+        if (!mods.length) { $("modules").innerHTML = emptyState("No modules documented yet."); return; }
+        const chips = (label, arr, cls) =>
+          (arr && arr.length) ? arr.map((x) => `<span class="chip ${cls || ""}">${esc(x)}</span>`).join("") : "";
+        $("modules").innerHTML = `
+          <h2 class="section">Modules</h2>
+          <p class="lead">${mods.length} documented module${mods.length === 1 ? "" : "s"}.</p>
+          <div class="grid modules">
+          ${mods.map((m) => `
+            <div class="card">
+              <div class="mod-head"><span class="mod-name">${esc(m.name)}</span><span class="mod-path mono">${esc(m.root_path || "")}</span></div>
+              <div class="chips">
+                ${chips("deps", m.depends_on, "")}
+                ${chips("files", (m.key_files || []).slice(0, 4), "muted")}
+              </div>
+              <details><summary>Documentation</summary><div class="md">${md(m.body_markdown)}</div></details>
+            </div>`).join("")}
+          </div>`;
+      } catch (e) {
+        $("modules").innerHTML = emptyState("Could not load modules.");
+      }
+    }
+
+    let diagramRendered = false;
+    async function loadArchitecture() {
+      try {
+        const { graph } = await getJSON("/api/mermaid");
+        if (!graph || !graph.trim()) { $("architecture").innerHTML = emptyState("No architecture diagram yet."); return; }
+        $("architecture").innerHTML = `<h2 class="section">Architecture</h2><p class="lead">Module dependency graph.</p><div id="diagram"></div>`;
+        const host = $("diagram");
+        try {
+          if (window.__mermaid) {
+            const { svg } = await window.__mermaid.render("devmem-graph-" + Date.now(), graph);
+            host.innerHTML = svg;
+          } else { throw new Error("mermaid unavailable"); }
+        } catch (err) {
+          host.innerHTML = `<pre class="fallback">${esc(graph)}</pre>`;
+        }
+        diagramRendered = true;
+      } catch (e) {
+        $("architecture").innerHTML = emptyState("Could not load architecture.");
+      }
+    }
+
+    async function loadChangelog() {
+      try {
+        const entries = await getJSON("/api/changelog");
+        if (!entries.length) { $("changelog").innerHTML = emptyState("No changes captured yet."); return; }
+        $("changelog").innerHTML = `
+          <h2 class="section">Changelog</h2>
+          <p class="lead">${entries.length} captured change${entries.length === 1 ? "" : "s"}, newest first.</p>
+          <div class="timeline">
+          ${entries.map((e) => `
+            <div class="entry ${e.breaking ? "breaking" : ""}">
+              <div class="entry-head">
+                <span class="type-badge ${esc(e.type)}">${esc(e.type || "change")}</span>
+                <span class="entry-id mono">${esc(String(e.id).slice(0, 14))}</span>
+                ${e.breaking ? '<span class="breaking-tag">breaking</span>' : ""}
+                <span class="entry-date">${esc((e.date || "").replace("T", " ").replace("Z", " UTC"))}</span>
+              </div>
+              ${(e.modules && e.modules.length) ? `<div class="chips">${e.modules.map((m) => `<span class="chip muted">${esc(m)}</span>`).join("")}</div>` : ""}
+              <div class="md">${md(e.body_markdown)}</div>
+            </div>`).join("")}
+          </div>`;
+      } catch (e) {
+        $("changelog").innerHTML = emptyState("Could not load changelog.");
+      }
+    }
+
+    // Tabs
+    document.querySelectorAll("nav.tabs button").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll("nav.tabs button").forEach((b) => b.classList.remove("active"));
+        document.querySelectorAll(".panel").forEach((p) => p.classList.remove("active"));
+        btn.classList.add("active");
+        const tab = btn.dataset.tab;
+        $(tab).classList.add("active");
+        if (tab === "architecture" && !diagramRendered) loadArchitecture();
+      });
+    });
+
+    // Live indicator: poll overview periodically.
+    async function ping() {
+      try {
+        await getJSON("/api/overview");
+        $("live-dot").classList.add("on");
+        $("live-text").textContent = "live";
+      } catch {
+        $("live-dot").classList.remove("on");
+        $("live-text").textContent = "offline";
+      }
+    }
+
+    async function init() {
+      await Promise.all([loadOverview(), loadModules(), loadChangelog()]);
+      loadArchitecture();
+      ping();
+      setInterval(ping, 5000);
+    }
+    init();
+  </script>
+</body>
+</html>
