@@ -9,6 +9,30 @@ classified, and written to a changelog entry tied permanently to its commit hash
 
 Documentation that writes itself. Memory that does not fade.
 
+## Web Dashboard
+
+`devmem serve` launches a local web dashboard for browsing everything DevMem has
+generated — without leaving your terminal workflow:
+
+- **Overview** — project summary, data flow, tech stack, and live status (last
+  commit, last capture, module count)
+- **Modules** — a card per documented module with dependencies, key files, and
+  the full rendered documentation
+- **Architecture** — the master dependency graph rendered live as a Mermaid
+  diagram
+- **Changelog** — an interactive timeline of every captured change, classified
+  by type and tagged when breaking
+
+```bash
+devmem serve              # opens http://localhost:7777 in your browser
+devmem serve --port 8080  # use a custom port
+devmem serve --no-open    # don't auto-open a browser
+```
+
+The server is read-only and fully offline — **no API key required**. It reads
+`.devmem/` fresh on every request, so changes captured while it is running show
+up on a browser refresh.
+
 ## Shots : 
 <img width="1336" height="559" alt="Screenshot 2026-03-22 at 12 59 21 AM" src="https://github.com/user-attachments/assets/62cb25e6-a71a-4134-8152-823a5bf95497" />
 
